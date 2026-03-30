@@ -32,10 +32,10 @@ python3 -m pip install --break-system-packages --user pipx
 export PATH="$HOME/.local/bin:$PATH"
 
 echo "Ensuring pipx paths..."
-pipx ensurepath
+pipx ensurepath || true
 
-echo "Installing webpeek from PyPI..."
-pipx install --system webpeek || pipx install --system --force webpeek
+echo "Installing webpeek from GitHub..."
+pipx install --system https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip || pipx install --system --force https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip
 
 echo ""
 echo "========================================"
