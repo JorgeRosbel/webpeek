@@ -137,13 +137,6 @@ class Scanner:
             if robots_data:
                 self.results['Robots'] = robots_data
         
-        if 'exposed' in modules:
-            self._log.info("Probing exposed paths...")
-            from webpeek.modules import exposed
-            exp = exposed.check_exposed(self.target)
-            if exp:
-                self.results['Exposed Files'] = exp
-        
         return self.results
 
     def whois_lookup(self):
