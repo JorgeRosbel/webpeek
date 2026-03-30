@@ -34,7 +34,7 @@ class Scanner:
             return None
 
     def scan_passive(self, modules):
-        self._log(f"Starting passive scan on {self.target}")
+        self._log(f"Starting scan on {self.target}")
         
         if 'whois' in modules:
             self._log("Checking WHOIS...")
