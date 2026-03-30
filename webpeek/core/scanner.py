@@ -5,15 +5,11 @@ import whois
 import warnings
 import subprocess
 import re
-import logging
+import sys
 from datetime import datetime
 from bs4 import BeautifulSoup
-from pwn import log
 
 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-
-logging.getLogger("pwnlib").setLevel(logging.CRITICAL)
-logging.getLogger("pwntools").setLevel(logging.CRITICAL)
 
 
 class Scanner:
@@ -24,7 +20,9 @@ class Scanner:
         self.use_dynamic = use_dynamic
         self.results = {}
         self.ip = None
-        self._log = log
+    
+    def _log(self, message):
+        print(f"[*] {message}")
 
     def get_ip(self):
         if self.ip:
@@ -36,26 +34,26 @@ class Scanner:
             return None
 
     def scan_passive(self, modules):
-        self._log.info(f"Starting passive scan on {self.target}")
+        self._log(f"Starting passive scan on {self.target}")
         
         if 'whois' in modules:
-            self._log.info("Checking WHOIS...")
+            self._log("Checking WHOIS...")
             self.results['WHOIS'] = self.whois_lookup()
         
         if 'dns' in modules:
-            self._log.info("Resolving DNS...")
+            self._log("Resolving DNS...")
             self.results['DNS'] = self.dns_lookup()
         
         if 'mx' in modules:
-            self._log.info("Checking MX records...")
+            self._log("Checking MX records...")
             self.results['MX'] = self.mx_lookup()
         
         if 'txt' in modules:
-            self._log.info("Checking TXT records...")
+            self._log("Checking TXT records...")
             self.results['TXT'] = self.txt_lookup()
         
         if 'subdomains' in modules:
-            self._log.info("Finding subdomains...")
+            self._log("Finding subdomains...")
             from webpeek.modules import subdomains
             subs = subdomains.get_subdomains(self.target)
             if subs:
@@ -69,73 +67,73 @@ class Scanner:
             self.results['IP'] = ip
         
         if 'geo' in modules:
-            self._log.info("Getting geolocation...")
+            self._log("Getting geolocation...")
             from webpeek.modules import geo
             self.results['Geo'] = geo.get_geo(ip) if ip else None
         
         if 'emails' in modules:
-            self._log.info("Extracting emails...")
+            self._log("Extracting emails...")
             from webpeek.modules import emails
             ems = emails.get_emails(self.target, self.use_dynamic)
             if ems:
                 self.results['Emails'] = ems
         
         if 'phones' in modules:
-            self._log.info("Extracting phone numbers...")
+            self._log("Extracting phone numbers...")
             from webpeek.modules import emails
             phs = emails.get_phones(self.target, self.use_dynamic)
             if phs:
                 self.results['Phones'] = phs
         
         if 'os' in modules:
-            self._log.info("Detecting OS (TTL)...")
+            self._log("Detecting OS (TTL)...")
             self.results['OS'] = self.os_detection()
         
         if 'headers' in modules:
-            self._log.info("Fetching HTTP headers...")
+            self._log("Fetching HTTP headers...")
             from webpeek.modules import headers as h
             self.results['Headers'] = h.get_headers(self.target)
         
         if 'security' in modules:
-            self._log.info("Auditing security headers...")
+            self._log("Auditing security headers...")
             from webpeek.modules import security_headers
             self.results['Security Headers'] = security_headers.get_security_headers(self.target)
         
         if 'tech' in modules:
-            self._log.info("Detecting technologies...")
+            self._log("Detecting technologies...")
             from webpeek.modules import tech
             result = tech.get_technologies(self.target, self.use_dynamic)
             self.results['Technologies'] = result
         
         if 'wplugins' in modules:
-            self._log.info("Detecting WordPress plugins...")
+            self._log("Detecting WordPress plugins...")
             from webpeek.modules import tech
             result = tech.get_wplugins(self.target, self.use_dynamic)
             if result:
                 self.results['WordPress Plugins'] = result
         
         if 'ssl' in modules:
-            self._log.info("Checking SSL certificate...")
+            self._log("Checking SSL certificate...")
             from webpeek.modules import ssl_info
             self.results['SSL'] = ssl_info.get_ssl_info(self.target)
         
         if 'title' in modules:
-            self._log.info("Getting page title...")
+            self._log("Getting page title...")
             self.results['Title'] = self.get_title()
         
         if 'description' in modules:
-            self._log.info("Getting meta description...")
+            self._log("Getting meta description...")
             self.results['Description'] = self.get_description()
         
         if 'sitemap' in modules:
-            self._log.info("Fetching sitemap...")
+            self._log("Fetching sitemap...")
             from webpeek.modules import sitemap
             urls = sitemap.get_sitemap(self.target)
             if urls:
                 self.results['Sitemap'] = urls
         
         if 'robots' in modules:
-            self._log.info("Fetching robots.txt...")
+            self._log("Fetching robots.txt...")
             from webpeek.modules import robots
             robots_data = robots.get_robots(self.target)
             if robots_data:
