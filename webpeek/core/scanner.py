@@ -5,11 +5,15 @@ import whois
 import warnings
 import subprocess
 import re
+import logging
 from datetime import datetime
 from bs4 import BeautifulSoup
 from pwn import log
 
 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+
+logging.getLogger("pwnlib").setLevel(logging.CRITICAL)
+logging.getLogger("pwntools").setLevel(logging.CRITICAL)
 
 
 class Scanner:
