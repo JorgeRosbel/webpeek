@@ -1,6 +1,9 @@
 README.md
 pyproject.toml
 setup.py
+venv/bin/readelf.py
+venv/bin/rpyc_classic.py
+venv/bin/rpyc_registry.py
 webpeek/__init__.py
 webpeek/cli.py
 webpeek.egg-info/PKG-INFO
@@ -14,12 +17,12 @@ webpeek/core/output.py
 webpeek/core/scanner.py
 webpeek/modules/__init__.py
 webpeek/modules/emails.py
-webpeek/modules/exposed.py
 webpeek/modules/geo.py
 webpeek/modules/headers.py
 webpeek/modules/robots.py
 webpeek/modules/security_headers.py
 webpeek/modules/sitemap.py
+webpeek/modules/social.py
 webpeek/modules/ssl_info.py
 webpeek/modules/subdomains.py
 webpeek/modules/tech.py
