@@ -14,10 +14,20 @@ rm -rf debian/webpeek
 rm -f webpeek_${VERSION}_all.deb
 rm -rf /tmp/webpeek-install
 
-echo "Installing Python dependencies..."
+echo "Installing Python dependencies (excluding system packages)..."
 python3 -m pip install --target=/tmp/webpeek-install \
     click requests dnspython whois beautifulsoup4 lxml colorama \
-    tldextract pwntools playwright pyee greenlet setuptools
+    tldextract pwntools playwright pyee greenlet
+
+echo "Removing system packages that conflict..."
+rm -rf /tmp/webpeek-install/_distutils_hack
+rm -rf /tmp/webpeek-install/distutils
+rm -rf /tmp/webpeek-install/setuptools
+rm -rf /tmp/webpeek-install/setuptools-*
+rm -rf /tmp/webpeek-install/pkg_resources
+rm -rf /tmp/webpeek-install/__pycache__
+find /tmp/webpeek-install -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find /tmp/webpeek-install -name "*.pyc" -delete 2>/dev/null || true
 
 echo "Creating package structure..."
 mkdir -p debian/webpeek/DEBIAN
@@ -51,7 +61,7 @@ Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: all
-Depends: python3, python3-click, python3-requests, python3-dnspython, python3-whois, python3-bs4, python3-lxml, python3-colorama, python3-tldextract, python3-pwntools, python3-pyee, python3-greenlet
+Depends: python3, python3-pip
 Maintainer: JorgeRosbel <jorge@rosbel.dev>
 Description: OSINT CLI tool for web reconnaissance
  webpeek gathers both passive and active information about websites,
@@ -62,6 +72,16 @@ EOF
 echo "Building .deb package..."
 dpkg-deb --build debian/webpeek webpeek_${VERSION}_all.deb
 
+echo ""
+echo "========================================"
+echo "  Package built successfully!"
+echo "========================================"
+echo ""
+echo "Output: webpeek_${VERSION}_all.deb"
+echo "Size: $(du -h webpeek_${VERSION}_all.deb | cut -f1)"
+echo ""
+echo "To install:"
+echo "  sudo apt install ./webpeek_${VERSION}_all.deb"
 echo ""
 echo "========================================"
 echo "  Package built successfully!"
