@@ -11,8 +11,10 @@ license = {text = "MIT"}
 authors = [
     {name = "JorgeRosbel", email = "jorge@rosbel.dev"}
 ]
-url = "https://github.com/JorgeRosbel/webpeek"
 requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/JorgeRosbel/webpeek"
 dependencies = [
     "click>=8.0",
     "requests>=2.28",
