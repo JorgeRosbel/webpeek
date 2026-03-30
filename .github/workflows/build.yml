@@ -27,50 +27,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y dpkg-dev python3-pip
 
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --target=/tmp/webpeek-install \
-            click requests dnspython whois beautifulsoup4 lxml colorama \
-            tldextract pwntools playwright pyee greenlet setuptools
-
-      - name: Create package structure
-        run: |
-          mkdir -p debian/webpeek/DEBIAN
-          mkdir -p debian/webpeek/usr/lib/python3/dist-packages
-          mkdir -p debian/webpeek/usr/bin
-          cp -r /tmp/webpeek-install/* debian/webpeek/usr/lib/python3/dist-packages/ 2>/dev/null || true
-          cp -r webpeek debian/webpeek/usr/lib/python3/dist-packages/
-
-      - name: Create launcher script
-        run: |
-          echo '#!/usr/bin/python3' > debian/webpeek/usr/bin/webpeek
-          echo 'import sys' >> debian/webpeek/usr/bin/webpeek
-          echo 'from webpeek.cli import cli' >> debian/webpeek/usr/bin/webpeek
-          echo "if __name__ == '__main__':" >> debian/webpeek/usr/bin/webpeek
-          echo '    sys.exit(cli())' >> debian/webpeek/usr/bin/webpeek
-          chmod +x debian/webpeek/usr/bin/webpeek
-
-      - name: Copy postinst script
-        run: |
-          cp debian/postinst debian/webpeek/DEBIAN/
-          chmod +x debian/webpeek/DEBIAN/postinst
-
-      - name: Create control file
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "Package: webpeek" > debian/webpeek/DEBIAN/control
-          echo "Version: $VERSION" >> debian/webpeek/DEBIAN/control
-          echo "Section: utils" >> debian/webpeek/DEBIAN/control
-          echo "Priority: optional" >> debian/webpeek/DEBIAN/control
-          echo "Architecture: all" >> debian/webpeek/DEBIAN/control
-          echo "Depends: python3, python3-click, python3-requests, python3-dnspython, python3-whois, python3-bs4, python3-lxml, python3-colorama, python3-tldextract, python3-pwntools, python3-pyee, python3-greenlet" >> debian/webpeek/DEBIAN/control
-          echo "Maintainer: JorgeRosbel <jorge@rosbel.dev>" >> debian/webpeek/DEBIAN/control
-          echo "Description: OSINT CLI tool for web reconnaissance" >> debian/webpeek/DEBIAN/control
-
       - name: Build .deb package
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          dpkg-deb --build debian/webpeek webpeek_${VERSION}_all.deb
+          chmod +x build.sh
+          ./build.sh
           ls -lh webpeek_*.deb
 
       - name: Create Release
