@@ -2,6 +2,29 @@ import requests
 import re
 
 
+def get_html_dynamic(url):
+    try:
+        from playwright.sync_api import sync_playwright
+        
+        full_url = url if url.startswith(('http://', 'https://')) else f"https://{url}"
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(full_url, wait_until='networkidle', timeout=30000)
+            html = page.content()
+            browser.close()
+            
+            headers_found = {
+                "Server": page.evaluate("() => window.server || 'Not Found'"),
+                "X-Powered-By": page.evaluate("() => document.querySelector('meta[name=\"generator\"]')?.content || 'Not Found'"),
+            }
+            
+            return {"html": html, "headers": headers_found}
+    except Exception as e:
+        return None
+
+
 def get_html(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -70,8 +93,12 @@ def get_wordpress_plugins(html):
     return list(plugins.values())[:20]
 
 
-def get_technologies(url):
-    content = get_html(url)
+def get_technologies(url, use_dynamic=False):
+    if use_dynamic:
+        content = get_html_dynamic(url)
+    else:
+        content = get_html(url)
+    
     if not content:
         return []
     
@@ -109,8 +136,12 @@ def get_technologies(url):
     return list(set(results)) if results else ["Unknown"]
 
 
-def get_wplugins(url):
-    content = get_html(url)
+def get_wplugins(url, use_dynamic=False):
+    if use_dynamic:
+        content = get_html_dynamic(url)
+    else:
+        content = get_html(url)
+    
     if not content:
         return []
     

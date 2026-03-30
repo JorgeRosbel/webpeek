@@ -57,10 +57,11 @@ ALL_PASSIVE_MODULES = ['whois', 'dns', 'mx', 'txt', 'subdomains']
 @click.option('-W', '--wplugins', is_flag=True, help='WordPress plugins')
 @click.option('-M', '--sitemap', is_flag=True, help='Extract URLs from sitemap')
 @click.option('-r', '--robots', is_flag=True, help='Fetch robots.txt')
+@click.option('-y', '--dynamic', is_flag=True, help='Use headless browser (Playwright) for dynamic content')
 @click.option('-oN', '--output', type=click.Path(), help='Save output to file')
 @click.option('-C', '--no-color', is_flag=True, help='Disable colors')
 @click.option('-v', '--verbose', is_flag=True, help='Verbose output')
-def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech, ssl, geo, os, title, desc, emails, phones, subdomains, security, wplugins, sitemap, robots, output, no_color, verbose):
+def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech, ssl, geo, os, title, desc, emails, phones, subdomains, security, wplugins, sitemap, robots, dynamic, output, no_color, verbose):
     use_color = not no_color
     
     domain = validate_target(target)
@@ -68,7 +69,7 @@ def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech
         print(f"{Colors.error('[ERROR] Invalid domain: ' + target)}")
         return
     
-    scanner = Scanner(domain, verbose, use_color)
+    scanner = Scanner(domain, verbose, use_color, dynamic)
     
     active_modules = []
     passive_modules = []

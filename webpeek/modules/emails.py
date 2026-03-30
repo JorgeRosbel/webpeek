@@ -413,24 +413,38 @@ def extract_phone_numbers(text):
         return []
 
 
-def get_phones(target):
+def get_phones(target, use_dynamic=False):
     phones = set()
     try:
-        r = requests.get(f"http://{target}", timeout=10, verify=False)
-        found = extract_phone_numbers(r.text)
-        phones.update(found)
+        if use_dynamic:
+            from webpeek.modules.tech import get_html_dynamic
+            content = get_html_dynamic(target)
+            if content:
+                found = extract_phone_numbers(content["html"])
+                phones.update(found)
+        else:
+            r = requests.get(f"http://{target}", timeout=10, verify=False)
+            found = extract_phone_numbers(r.text)
+            phones.update(found)
         
         return list(phones)[:10] if phones else []
     except Exception as e:
         return []
 
 
-def get_emails(target):
+def get_emails(target, use_dynamic=False):
     emails = set()
     try:
-        r = requests.get(f"http://{target}", timeout=10, verify=False)
-        found = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', r.text)
-        emails.update(found)
+        if use_dynamic:
+            from webpeek.modules.tech import get_html_dynamic
+            content = get_html_dynamic(target)
+            if content:
+                found = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', content["html"])
+                emails.update(found)
+        else:
+            r = requests.get(f"http://{target}", timeout=10, verify=False)
+            found = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', r.text)
+            emails.update(found)
         
         return list(emails)[:10] if emails else []
     except Exception as e:

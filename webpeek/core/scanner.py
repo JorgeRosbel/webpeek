@@ -13,10 +13,11 @@ warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
 
 class Scanner:
-    def __init__(self, target, verbose=False, use_color=True):
+    def __init__(self, target, verbose=False, use_color=True, use_dynamic=False):
         self.target = target
         self.verbose = verbose
         self.use_color = use_color
+        self.use_dynamic = use_dynamic
         self.results = {}
         self.ip = None
         self._log = log
@@ -71,14 +72,14 @@ class Scanner:
         if 'emails' in modules:
             self._log.info("Extracting emails...")
             from webpeek.modules import emails
-            ems = emails.get_emails(self.target)
+            ems = emails.get_emails(self.target, self.use_dynamic)
             if ems:
                 self.results['Emails'] = ems
         
         if 'phones' in modules:
             self._log.info("Extracting phone numbers...")
             from webpeek.modules import emails
-            phs = emails.get_phones(self.target)
+            phs = emails.get_phones(self.target, self.use_dynamic)
             if phs:
                 self.results['Phones'] = phs
         
@@ -99,13 +100,13 @@ class Scanner:
         if 'tech' in modules:
             self._log.info("Detecting technologies...")
             from webpeek.modules import tech
-            result = tech.get_technologies(self.target)
+            result = tech.get_technologies(self.target, self.use_dynamic)
             self.results['Technologies'] = result
         
         if 'wplugins' in modules:
             self._log.info("Detecting WordPress plugins...")
             from webpeek.modules import tech
-            result = tech.get_wplugins(self.target)
+            result = tech.get_wplugins(self.target, self.use_dynamic)
             if result:
                 self.results['WordPress Plugins'] = result
         
