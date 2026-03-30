@@ -16,7 +16,6 @@ rm -f webpeek_${VERSION}_all.deb
 echo "Creating minimal package structure..."
 mkdir -p debian/webpeek/DEBIAN
 mkdir -p debian/webpeek/usr/bin
-mkdir -p debian/webpeek/usr/share/webpeek
 
 echo "Creating installer script..."
 cat > debian/webpeek/usr/bin/webpeek-install << 'EOFINSTALL'
@@ -27,8 +26,9 @@ echo "========================================"
 echo "  Webpeek Installer"
 echo "========================================"
 
+# Install pipx with --break-system-packages
 echo "Installing pipx..."
-python3 -m pip install --user pipx
+python3 -m pip install --break-system-packages --user pipx
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -36,7 +36,7 @@ echo "Ensuring pipx paths..."
 pipx ensurepath
 
 echo "Installing webpeek from PyPI..."
-pipx install webpeek || pipx install --force webpeek
+pipx install --system webpeek || pipx install --system --force webpeek
 
 echo ""
 echo "========================================"
@@ -80,17 +80,15 @@ echo "Creating maintainer scripts..."
 cat > debian/webpeek/DEBIAN/postinst << 'EOFPOSTINST'
 #!/bin/bash
 set -e
-
-echo "Running webpeek installer..."
-/usr/bin/webpeek-install
+/usr/bin/webpeek-install || true
 EOFPOSTINST
 chmod +x debian/webpeek/DEBIAN/postinst
 
 cat > debian/webpeek/DEBIAN/prerm << 'EOFPRERM'
 #!/bin/bash
 set -e
-
-/usr/bin/webpeek-uninstall
+export PATH="$HOME/.local/bin:$PATH"
+pipx uninstall webpeek 2>/dev/null || true
 EOFPRERM
 chmod +x debian/webpeek/DEBIAN/prerm
 
