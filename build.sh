@@ -26,28 +26,26 @@ echo "========================================"
 echo "  Webpeek Installer"
 echo "========================================"
 
-echo "Installing pipx..."
-python3 -m pip install --break-system-packages --user pipx
+echo "Installing pipx for current user..."
+python3 -m pip install --user pipx
 
 export PATH="$HOME/.local/bin:$PATH"
 
 echo "Ensuring pipx paths..."
 pipx ensurepath || true
 
-echo "Installing webpeek from GitHub..."
-pipx install --system https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip || pipx install --system --force https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip
+# Get the actual user who ran sudo
+TARGET_USER=${SUDO_USER:-$(whoami)}
+TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 
-echo "Creating symlink in /usr/local/bin..."
-pipx run webpeek --version >/dev/null 2>&1 || true
+echo "Installing webpeek for user: $TARGET_USER..."
+su - "$TARGET_USER" -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && pipx install https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip" || true
 
-WEBPEEK_PATH=$(find ~/.local -name "webpeek" -type f -executable 2>/dev/null | head -1)
-if [ -z "$WEBPEEK_PATH" ]; then
-    WEBPEEK_PATH=$(find /root -name "webpeek" -type f -executable 2>/dev/null | head -1)
-fi
-
-if [ -n "$WEBPEEK_PATH" ]; then
-    ln -sf "$WEBPEEK_PATH" /usr/local/bin/webpeek 2>/dev/null || sudo ln -sf "$WEBPEEK_PATH" /usr/local/bin/webpeek
-    echo "Created symlink: /usr/local/bin/webpeek -> $WEBPEEK_PATH"
+# Create symlink accessible to all users
+if [ -f "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek" ]; then
+    ln -sf "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek" /usr/local/bin/webpeek
+    chmod +x "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek"
+    echo "Created symlink in /usr/local/bin/webpeek"
 fi
 
 echo ""
