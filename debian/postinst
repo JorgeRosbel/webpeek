@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+echo "Installing webpeek dependencies..."
+
+pip3 install playwright --quiet 2>/dev/null || true
+
+playwright install chromium --with-deps 2>/dev/null || true
+
+echo "webpeek installed successfully!"
+echo "Run 'webpeek --help' to get started."
