@@ -236,18 +236,36 @@ class Scanner:
 
     def get_title(self):
         try:
-            r = requests.get(f"http://{self.target}", timeout=10, verify=False)
-            soup = BeautifulSoup(r.text, 'lxml')
-            title = soup.title.string if soup.title else None
-            return title.strip() if title else None
+            if self.use_dynamic:
+                from webpeek.modules.tech import get_html_dynamic
+                content = get_html_dynamic(self.target)
+                html = content["html"] if content else None
+            else:
+                r = requests.get(f"http://{self.target}", timeout=10, verify=False)
+                html = r.text
+            
+            if html:
+                soup = BeautifulSoup(html, 'lxml')
+                title = soup.title.string if soup.title else None
+                return title.strip() if title else None
+            return None
         except:
             return None
 
     def get_description(self):
         try:
-            r = requests.get(f"http://{self.target}", timeout=10, verify=False)
-            soup = BeautifulSoup(r.text, 'lxml')
-            meta = soup.find('meta', attrs={'name': 'description'})
-            return meta.get('content', None) if meta else None
+            if self.use_dynamic:
+                from webpeek.modules.tech import get_html_dynamic
+                content = get_html_dynamic(self.target)
+                html = content["html"] if content else None
+            else:
+                r = requests.get(f"http://{self.target}", timeout=10, verify=False)
+                html = r.text
+            
+            if html:
+                soup = BeautifulSoup(html, 'lxml')
+                meta = soup.find('meta', attrs={'name': 'description'})
+                return meta.get('content', None) if meta else None
+            return None
         except:
             return None

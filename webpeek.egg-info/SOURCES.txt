@@ -1,4 +1,5 @@
 README.md
+pyproject.toml
 setup.py
 webpeek/__init__.py
 webpeek/cli.py

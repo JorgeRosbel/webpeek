@@ -5,23 +5,28 @@ import re
 def get_html_dynamic(url):
     try:
         from playwright.sync_api import sync_playwright
+        import sys
         
         full_url = url if url.startswith(('http://', 'https://')) else f"https://{url}"
         
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(full_url, wait_until='networkidle', timeout=30000)
-            html = page.content()
-            browser.close()
-            
-            headers_found = {
-                "Server": page.evaluate("() => window.server || 'Not Found'"),
-                "X-Powered-By": page.evaluate("() => document.querySelector('meta[name=\"generator\"]')?.content || 'Not Found'"),
-            }
-            
-            return {"html": html, "headers": headers_found}
+        playwright = sync_playwright().start()
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(full_url, wait_until='networkidle', timeout=30000)
+        
+        html = page.content()
+        
+        headers_found = {
+            "Server": page.evaluate("() => window.server || 'Not Found'"),
+            "X-Powered-By": page.evaluate("() => document.querySelector('meta[name=\"generator\"]')?.content || 'Not Found'"),
+        }
+        
+        browser.close()
+        playwright.stop()
+        
+        return {"html": html, "headers": headers_found}
     except Exception as e:
+        print(f"Dynamic mode error: {e}", file=sys.stderr)
         return None
 
 
