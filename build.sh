@@ -37,6 +37,19 @@ pipx ensurepath || true
 echo "Installing webpeek from GitHub..."
 pipx install --system https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip || pipx install --system --force https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip
 
+echo "Creating symlink in /usr/local/bin..."
+pipx run webpeek --version >/dev/null 2>&1 || true
+
+WEBPEEK_PATH=$(find ~/.local -name "webpeek" -type f -executable 2>/dev/null | head -1)
+if [ -z "$WEBPEEK_PATH" ]; then
+    WEBPEEK_PATH=$(find /root -name "webpeek" -type f -executable 2>/dev/null | head -1)
+fi
+
+if [ -n "$WEBPEEK_PATH" ]; then
+    ln -sf "$WEBPEEK_PATH" /usr/local/bin/webpeek 2>/dev/null || sudo ln -sf "$WEBPEEK_PATH" /usr/local/bin/webpeek
+    echo "Created symlink: /usr/local/bin/webpeek -> $WEBPEEK_PATH"
+fi
+
 echo ""
 echo "========================================"
 echo "  webpeek installed successfully!"
