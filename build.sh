@@ -2,7 +2,7 @@
 set -e
 
 echo "========================================"
-echo "  Webpeek Package Builder"
+echo "  Webpeek Package Builder (pipx)"
 echo "========================================"
 
 VERSION=$(python3 -c "import re; print(re.search(r\"version='([^']+)'\", open('setup.py').read()).group(1))")
@@ -12,43 +12,51 @@ echo "Building webpeek version $VERSION"
 echo "Cleaning previous builds..."
 rm -rf debian/webpeek
 rm -f webpeek_${VERSION}_all.deb
-rm -rf /tmp/webpeek-install
+rm -rf /tmp/webpeek-pipx
 
-echo "Installing Python dependencies (excluding system packages)..."
-python3 -m pip install --target=/tmp/webpeek-install \
-    click requests dnspython whois beautifulsoup4 lxml colorama \
-    tldextract pwntools playwright pyee greenlet
-
-echo "Removing system packages that conflict..."
-rm -rf /tmp/webpeek-install/_distutils_hack
-rm -rf /tmp/webpeek-install/distutils
-rm -rf /tmp/webpeek-install/setuptools
-rm -rf /tmp/webpeek-install/setuptools-*
-rm -rf /tmp/webpeek-install/pkg_resources
-rm -rf /tmp/webpeek-install/__pycache__
-find /tmp/webpeek-install -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-find /tmp/webpeek-install -name "*.pyc" -delete 2>/dev/null || true
-
-echo "Creating package structure..."
+echo "Creating pipx package structure..."
 mkdir -p debian/webpeek/DEBIAN
-mkdir -p debian/webpeek/usr/lib/python3/dist-packages
 mkdir -p debian/webpeek/usr/bin
+mkdir -p debian/webpeek/usr/share/webpeek
 
-echo "Copying dependencies..."
-cp -r /tmp/webpeek-install/* debian/webpeek/usr/lib/python3/dist-packages/ 2>/dev/null || true
+echo "Creating installation script..."
+cat > debian/webpeek/usr/share/webpeek/install.sh << 'EOFINSTALL'
+#!/bin/bash
+set -e
 
-echo "Copying webpeek..."
-cp -r webpeek debian/webpeek/usr/lib/python3/dist-packages/
+echo "Installing webpeek with pipx..."
 
-echo "Creating launcher script..."
-cat > debian/webpeek/usr/bin/webpeek << 'EOF'
-#!/usr/bin/python3
-import sys
-from webpeek.cli import cli
-if __name__ == '__main__':
-    sys.exit(cli())
-EOF
-chmod +x debian/webpeek/usr/bin/webpeek
+# Install pipx if not present
+if ! command -v pipx &> /dev/null; then
+    echo "Installing pipx..."
+    python3 -m pip install --user pipx
+    export PATH="$HOME/.local/bin:$PATH"
+    pipx ensurepath
+fi
+
+# Install webpeek using pipx
+pipx install webpeek || pipx install --force webpeek
+
+echo ""
+echo "========================================"
+echo "  webpeek installed successfully!"
+echo "========================================"
+echo ""
+echo "Run 'webpeek --help' to get started."
+EOFINSTALL
+chmod +x debian/webpeek/usr/share/webpeek/install.sh
+
+echo "Creating uninstall script..."
+cat > debian/webpeek/usr/share/webpeek/uninstall.sh << 'EOFUNINSTALL'
+#!/bin/bash
+set -e
+
+echo "Uninstalling webpeek..."
+pipx uninstall webpeek 2>/dev/null || true
+
+echo "webpeek uninstalled."
+EOFUNINSTALL
+chmod +x debian/webpeek/usr/share/webpeek/uninstall.sh
 
 echo "Copying postinst..."
 cp debian/postinst debian/webpeek/DEBIAN/
@@ -61,7 +69,7 @@ Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: all
-Depends: python3, python3-pip
+Depends: python3, python3-pip, python3-venv
 Maintainer: JorgeRosbel <jorge@rosbel.dev>
 Description: OSINT CLI tool for web reconnaissance
  webpeek gathers both passive and active information about websites,
@@ -82,6 +90,8 @@ echo "Size: $(du -h webpeek_${VERSION}_all.deb | cut -f1)"
 echo ""
 echo "To install:"
 echo "  sudo apt install ./webpeek_${VERSION}_all.deb"
+echo ""
+echo "The package will automatically install webpeek using pipx."
 echo ""
 echo "========================================"
 echo "  Package built successfully!"

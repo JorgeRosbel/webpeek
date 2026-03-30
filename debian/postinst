@@ -1,14 +1,22 @@
 #!/bin/bash
 set -e
 
-echo "Installing webpeek dependencies..."
+echo "Installing webpeek with pipx..."
 
-pip3 install --break-system-packages click requests dnspython whois beautifulsoup4 lxml colorama tldextract pwntools pyee greenlet 2>/dev/null || \
-pip3 install click requests dnspython whois beautifulsoup4 lxml colorama tldextract pwntools pyee greenlet
+# Install pipx if not present
+if ! command -v pipx &> /dev/null; then
+    echo "Installing pipx..."
+    python3 -m pip install --user pipx
+    export PATH="$HOME/.local/bin:$PATH"
+    pipx ensurepath
+fi
 
-pip3 install playwright
+# Install webpeek using pipx (from PyPI)
+pipx install webpeek || pipx install --force webpeek
 
-playwright install chromium --with-deps
-
-echo "webpeek installed successfully!"
+echo ""
+echo "========================================"
+echo "  webpeek installed successfully!"
+echo "========================================"
+echo ""
 echo "Run 'webpeek --help' to get started."
