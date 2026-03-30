@@ -10,15 +10,15 @@ VERSION=$(python3 -c "import re; print(re.search(r\"version='([^']+)'\", open('s
 echo "Building webpeek version $VERSION"
 
 echo "Cleaning previous builds..."
-rm -rf debian/webpeek
+rm -rf debian/webpeek-package
 rm -f webpeek_${VERSION}_all.deb
 
 echo "Creating minimal package structure..."
-mkdir -p debian/webpeek/DEBIAN
-mkdir -p debian/webpeek/usr/bin
+mkdir -p debian/webpeek-package/DEBIAN
+mkdir -p debian/webpeek-package/usr/bin
 
 echo "Creating installer script..."
-cat > debian/webpeek/usr/bin/webpeek-install << 'EOFINSTALL'
+cat > debian/webpeek-package/usr/bin/webpeek-install << 'EOFINSTALL'
 #!/bin/bash
 set -e
 
@@ -26,7 +26,6 @@ echo "========================================"
 echo "  Webpeek Installer"
 echo "========================================"
 
-# Install pipx with --break-system-packages
 echo "Installing pipx..."
 python3 -m pip install --break-system-packages --user pipx
 
@@ -45,10 +44,10 @@ echo "========================================"
 echo ""
 echo "Run 'webpeek --help' to get started."
 EOFINSTALL
-chmod +x debian/webpeek/usr/bin/webpeek-install
+chmod +x debian/webpeek-package/usr/bin/webpeek-install
 
 echo "Creating uninstall script..."
-cat > debian/webpeek/usr/bin/webpeek-uninstall << 'EOFUNINSTALL'
+cat > debian/webpeek-package/usr/bin/webpeek-uninstall << 'EOFUNINSTALL'
 #!/bin/bash
 set -e
 
@@ -59,10 +58,10 @@ pipx uninstall webpeek 2>/dev/null || true
 
 echo "webpeek uninstalled."
 EOFUNINSTALL
-chmod +x debian/webpeek/usr/bin/webpeek-uninstall
+chmod +x debian/webpeek-package/usr/bin/webpeek-uninstall
 
 echo "Creating control file..."
-cat > debian/webpeek/DEBIAN/control << EOF
+cat > debian/webpeek-package/DEBIAN/control << EOF
 Package: webpeek
 Version: $VERSION
 Section: utils
@@ -77,34 +76,24 @@ Description: OSINT CLI tool for web reconnaissance
 EOF
 
 echo "Creating maintainer scripts..."
-cat > debian/webpeek/DEBIAN/postinst << 'EOFPOSTINST'
+cat > debian/webpeek-package/DEBIAN/postinst << 'EOFPOSTINST'
 #!/bin/bash
 set -e
 /usr/bin/webpeek-install || true
 EOFPOSTINST
-chmod +x debian/webpeek/DEBIAN/postinst
+chmod +x debian/webpeek-package/DEBIAN/postinst
 
-cat > debian/webpeek/DEBIAN/prerm << 'EOFPRERM'
+cat > debian/webpeek-package/DEBIAN/prerm << 'EOFPRERM'
 #!/bin/bash
 set -e
 export PATH="$HOME/.local/bin:$PATH"
 pipx uninstall webpeek 2>/dev/null || true
 EOFPRERM
-chmod +x debian/webpeek/DEBIAN/prerm
+chmod +x debian/webpeek-package/DEBIAN/prerm
 
 echo "Building .deb package..."
-dpkg-deb --build debian/webpeek webpeek_${VERSION}_all.deb
+dpkg-deb --build --root-owner-group debian/webpeek-package webpeek_${VERSION}_all.deb
 
-echo ""
-echo "========================================"
-echo "  Package built successfully!"
-echo "========================================"
-echo ""
-echo "Output: webpeek_${VERSION}_all.deb"
-echo "Size: $(du -h webpeek_${VERSION}_all.deb | cut -f1)"
-echo ""
-echo "To install:"
-echo "  sudo apt install ./webpeek_${VERSION}_all.deb"
 echo ""
 echo "========================================"
 echo "  Package built successfully!"

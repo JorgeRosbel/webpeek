@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='webpeek',
-    version='1.0.6',
+    version='1.0.7',
     description='OSINT CLI tool for web reconnaissance',
     author='JorgeRosbel',
     author_email='jorge@rosbel.dev',

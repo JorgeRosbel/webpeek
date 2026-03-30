@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+export PATH="$HOME/.local/bin:$PATH"
+
+echo "Uninstalling webpeek..."
+pipx uninstall webpeek 2>/dev/null || true
+
+echo "webpeek uninstalled."
