@@ -27,7 +27,7 @@ echo "  Webpeek Installer"
 echo "========================================"
 
 echo "Installing pipx for current user..."
-python3 -m pip install --user pipx
+python3 -m pip install --break-system-packages --user pipx
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -39,7 +39,7 @@ TARGET_USER=${SUDO_USER:-$(whoami)}
 TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
 
 echo "Installing webpeek for user: $TARGET_USER..."
-su - "$TARGET_USER" -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && pipx install https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip" || true
+su - "$TARGET_USER" -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && pipx install --system https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip" || true
 
 # Create symlink accessible to all users
 if [ -f "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek" ]; then
