@@ -2,7 +2,7 @@
 set -e
 
 echo "========================================"
-echo "  Webpeek Package Builder (Minimal)"
+echo "  Webpeek Package Builder"
 echo "========================================"
 
 VERSION=$(python3 -c "import re; print(re.search(r\"version='([^']+)'\", open('setup.py').read()).group(1))")
@@ -13,40 +13,69 @@ echo "Cleaning previous builds..."
 rm -rf debian/webpeek-package
 rm -f webpeek_${VERSION}_all.deb
 
-echo "Creating minimal package structure..."
+echo "Creating package structure..."
 mkdir -p debian/webpeek-package/DEBIAN
-mkdir -p debian/webpeek-package/usr/bin
+mkdir -p debian/webpeek-package/usr/local/bin
+mkdir -p debian/webpeek-package/usr/share/webpeek
 
 echo "Creating installer script..."
-cat > debian/webpeek-package/usr/bin/webpeek-install << 'EOFINSTALL'
+cat > debian/webpeek-package/usr/local/bin/webpeek << 'EOFINSTALL'
 #!/bin/bash
-set -e
+
+REPO_URL="https://github.com/JorgeRosbel/webpeek"
+INSTALL_DIR="/usr/share/webpeek"
+BIN_LINK="/usr/local/bin/webpeek"
 
 echo "========================================"
 echo "  Webpeek Installer"
 echo "========================================"
 
-echo "Installing pipx for current user..."
-python3 -m pip install --break-system-packages --user pipx
-
-export PATH="$HOME/.local/bin:$PATH"
-
-echo "Ensuring pipx paths..."
-pipx ensurepath || true
-
-# Get the actual user who ran sudo
-TARGET_USER=${SUDO_USER:-$(whoami)}
-TARGET_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
-
-echo "Installing webpeek for user: $TARGET_USER..."
-su - "$TARGET_USER" -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && pipx install --system https://github.com/JorgeRosbel/webpeek/archive/refs/heads/main.zip" || true
-
-# Create symlink accessible to all users
-if [ -f "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek" ]; then
-    ln -sf "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek" /usr/local/bin/webpeek
-    chmod +x "$TARGET_HOME/.local/share/pipx/venvs/webpeek/bin/webpeek"
-    echo "Created symlink in /usr/local/bin/webpeek"
+# Check if already installed
+if [ -f "$BIN_LINK" ] && [ -d "$INSTALL_DIR" ]; then
+    echo "webpeek is already installed!"
+    exec "$BIN_LINK" "$@"
 fi
+
+# Create install directory
+mkdir -p "$INSTALL_DIR"
+
+# Clone or download repository
+echo "Downloading webpeek..."
+if command -v git &> /dev/null; then
+    if [ -d "$INSTALL_DIR/.git" ]; then
+        cd "$INSTALL_DIR" && git pull
+    else
+        git clone --depth 1 "$REPO_URL" "$INSTALL_DIR"
+    fi
+else
+    # Fallback: download as zip
+    curl -sL "$REPO_URL/archive/refs/heads/main.zip" -o /tmp/webpeek.zip
+    unzip -q /tmp/webpeek.zip -d /tmp/
+    mv /tmp/webpeek-main/* "$INSTALL_DIR/"
+    rm -rf /tmp/webpeek.zip /tmp/webpeek-main
+fi
+
+# Install dependencies
+echo "Installing dependencies..."
+pip3 install --break-system-packages click requests dnspython whois beautifulsoup4 lxml colorama tldextract pwntools playwright pyee greenlet 2>/dev/null || \
+pip3 install click requests dnspython whois beautifulsoup4 lxml colorama tldextract pwntools playwright pyee greenlet
+
+# Create launcher
+cat > "$BIN_LINK" << 'EOFLAUNCHER'
+#!/bin/bash
+/usr/bin/python3 -c "
+import sys
+sys.path.insert(0, '/usr/share/webpeek')
+from webpeek.cli import cli
+sys.exit(cli())
+"
+EOFLAUNCHER
+
+chmod +x "$BIN_LINK"
+
+# Install Playwright browser
+echo "Installing Playwright browser..."
+playwright install chromium --with-deps 2>/dev/null || true
 
 echo ""
 echo "========================================"
@@ -55,21 +84,7 @@ echo "========================================"
 echo ""
 echo "Run 'webpeek --help' to get started."
 EOFINSTALL
-chmod +x debian/webpeek-package/usr/bin/webpeek-install
-
-echo "Creating uninstall script..."
-cat > debian/webpeek-package/usr/bin/webpeek-uninstall << 'EOFUNINSTALL'
-#!/bin/bash
-set -e
-
-export PATH="$HOME/.local/bin:$PATH"
-
-echo "Uninstalling webpeek..."
-pipx uninstall webpeek 2>/dev/null || true
-
-echo "webpeek uninstalled."
-EOFUNINSTALL
-chmod +x debian/webpeek-package/usr/bin/webpeek-uninstall
+chmod +x debian/webpeek-package/usr/local/bin/webpeek
 
 echo "Creating control file..."
 cat > debian/webpeek-package/DEBIAN/control << EOF
@@ -85,22 +100,6 @@ Description: OSINT CLI tool for web reconnaissance
  including WHOIS, DNS, technologies, social networks, and more.
  Supports dynamic scanning with Playwright for JavaScript-rendered sites.
 EOF
-
-echo "Creating maintainer scripts..."
-cat > debian/webpeek-package/DEBIAN/postinst << 'EOFPOSTINST'
-#!/bin/bash
-set -e
-/usr/bin/webpeek-install || true
-EOFPOSTINST
-chmod +x debian/webpeek-package/DEBIAN/postinst
-
-cat > debian/webpeek-package/DEBIAN/prerm << 'EOFPRERM'
-#!/bin/bash
-set -e
-export PATH="$HOME/.local/bin:$PATH"
-pipx uninstall webpeek 2>/dev/null || true
-EOFPRERM
-chmod +x debian/webpeek-package/DEBIAN/prerm
 
 echo "Building .deb package..."
 dpkg-deb --build --root-owner-group debian/webpeek-package webpeek_${VERSION}_all.deb
