@@ -1,6 +1,37 @@
 import requests
 import re
+from typing import List
 from bs4 import BeautifulSoup
+
+
+def extract_emails(text: str) -> List[str]:
+    pattern = r'[a-zA-Z0-9._%+-]+@(?!.*(?:\.png|\.webp|\.jpg|\.jpeg|\.gif|\.svg))[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    
+    matches = re.findall(pattern, text)
+    
+    if matches:
+        unique_emails = list(set(matches))
+        return unique_emails
+    else:
+        return []
+    
+    
+def extract_phone_numbers(text: str) -> List[str]:
+    pattern = r'(?:\+|00)[1-9][0-9]{0,2}[ -]?(?:\([0-9]{1,4}\)|[0-9]{1,4})(?:[ -]?[0-9]){6,12}'
+    
+    matches = re.findall(pattern, text)
+    
+    if matches:
+        cleaned_list = [re.sub(r'\D', '', phone) for phone in matches]
+        unique_phones = list(set(cleaned_list))
+        
+        final = []
+        for phone in unique_phones:
+            if 7 <= len(phone) <= 15:
+                final.append(f"+{phone}")
+        return final
+    else:
+        return []
 
 
 PHONE_PREFIXES = {
@@ -413,39 +444,19 @@ def extract_phone_numbers(text):
         return []
 
 
-def get_phones(target, use_dynamic=False):
-    phones = set()
+def get_phones(html=None):
     try:
-        if use_dynamic:
-            from webpeek.modules.tech import get_html_dynamic
-            content = get_html_dynamic(target)
-            if content:
-                found = extract_phone_numbers(content["html"])
-                phones.update(found)
-        else:
-            r = requests.get(f"http://{target}", timeout=10, verify=False)
-            found = extract_phone_numbers(r.text)
-            phones.update(found)
-        
-        return list(phones)[:10] if phones else []
+        if html:
+            return extract_phone_numbers(html)[:10]
+        return []
     except Exception as e:
         return []
 
 
-def get_emails(target, use_dynamic=False):
-    emails = set()
+def get_emails(html=None):
     try:
-        if use_dynamic:
-            from webpeek.modules.tech import get_html_dynamic
-            content = get_html_dynamic(target)
-            if content:
-                found = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', content["html"])
-                emails.update(found)
-        else:
-            r = requests.get(f"http://{target}", timeout=10, verify=False)
-            found = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', r.text)
-            emails.update(found)
-        
-        return list(emails)[:10] if emails else []
+        if html:
+            return extract_emails(html)[:10]
+        return []
     except Exception as e:
         return []

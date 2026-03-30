@@ -119,7 +119,7 @@ First time using dynamic mode will download Chromium (~150MB).
 
 ```
 ╔════════════════════════════════════════════════════════╗
-║  🌐 WEBPEEK v1.0.0 - example.com                  ║
+║  🌐 WEBPEEK v1.3.0 - example.com                  ║
 ╚════════════════════════════════════════════════════════╝
 
   📡 PASSIVE MODE

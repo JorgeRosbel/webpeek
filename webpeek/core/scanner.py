@@ -20,9 +20,25 @@ class Scanner:
         self.use_dynamic = use_dynamic
         self.results = {}
         self.ip = None
+        self._html_cache = None
     
     def _log(self, message):
         print(f"[*] {message}")
+    
+    def _get_html(self):
+        if self._html_cache is not None:
+            return self._html_cache
+        
+        if self.use_dynamic:
+            from webpeek.modules.tech import get_html_dynamic
+            content = get_html_dynamic(self.target)
+            self._html_cache = content["html"] if content else None
+        else:
+            from webpeek.modules.tech import get_html
+            content = get_html(self.target)
+            self._html_cache = content["html"] if content else None
+        
+        return self._html_cache
 
     def get_ip(self):
         if self.ip:
@@ -74,14 +90,16 @@ class Scanner:
         if 'emails' in modules:
             self._log("Extracting emails...")
             from webpeek.modules import emails
-            ems = emails.get_emails(self.target, self.use_dynamic)
+            html = self._get_html()
+            ems = emails.get_emails(html)
             if ems:
                 self.results['Emails'] = ems
         
         if 'phones' in modules:
             self._log("Extracting phone numbers...")
             from webpeek.modules import emails
-            phs = emails.get_phones(self.target, self.use_dynamic)
+            html = self._get_html()
+            phs = emails.get_phones(html)
             if phs:
                 self.results['Phones'] = phs
         
@@ -138,6 +156,14 @@ class Scanner:
             robots_data = robots.get_robots(self.target)
             if robots_data:
                 self.results['Robots'] = robots_data
+        
+        if 'social' in modules:
+            self._log("Extracting social networks...")
+            from webpeek.modules import social
+            html = self._get_html()
+            social_data = social.get_social(html)
+            if social_data:
+                self.results['Social'] = social_data
         
         return self.results
 
@@ -231,14 +257,7 @@ class Scanner:
 
     def get_title(self):
         try:
-            if self.use_dynamic:
-                from webpeek.modules.tech import get_html_dynamic
-                content = get_html_dynamic(self.target)
-                html = content["html"] if content else None
-            else:
-                r = requests.get(f"http://{self.target}", timeout=10, verify=False)
-                html = r.text
-            
+            html = self._get_html()
             if html:
                 soup = BeautifulSoup(html, 'lxml')
                 title = soup.title.string if soup.title else None
@@ -249,14 +268,7 @@ class Scanner:
 
     def get_description(self):
         try:
-            if self.use_dynamic:
-                from webpeek.modules.tech import get_html_dynamic
-                content = get_html_dynamic(self.target)
-                html = content["html"] if content else None
-            else:
-                r = requests.get(f"http://{self.target}", timeout=10, verify=False)
-                html = r.text
-            
+            html = self._get_html()
             if html:
                 soup = BeautifulSoup(html, 'lxml')
                 meta = soup.find('meta', attrs={'name': 'description'})

@@ -30,7 +30,7 @@ def validate_target(target):
         return None
 
 
-ALL_ACTIVE_MODULES = ['headers', 'tech', 'ssl', 'geo', 'title', 'description', 'security', 'wplugins', 'sitemap', 'robots', 'os', 'emails', 'phones']
+ALL_ACTIVE_MODULES = ['headers', 'tech', 'ssl', 'geo', 'title', 'description', 'security', 'wplugins', 'sitemap', 'robots', 'social', 'os', 'emails', 'phones']
 ALL_PASSIVE_MODULES = ['whois', 'dns', 'mx', 'txt', 'subdomains']
 
 
@@ -57,11 +57,12 @@ ALL_PASSIVE_MODULES = ['whois', 'dns', 'mx', 'txt', 'subdomains']
 @click.option('-W', '--wplugins', is_flag=True, help='WordPress plugins')
 @click.option('-M', '--sitemap', is_flag=True, help='Extract URLs from sitemap')
 @click.option('-r', '--robots', is_flag=True, help='Fetch robots.txt')
+@click.option('-l', '--social', is_flag=True, help='Social networks')
 @click.option('-y', '--dynamic', is_flag=True, help='Use headless browser (Playwright) for dynamic content')
 @click.option('-oN', '--output', type=click.Path(), help='Save output to file')
 @click.option('-C', '--no-color', is_flag=True, help='Disable colors')
 @click.option('-v', '--verbose', is_flag=True, help='Verbose output')
-def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech, ssl, geo, os, title, desc, emails, phones, subdomains, security, wplugins, sitemap, robots, dynamic, output, no_color, verbose):
+def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech, ssl, geo, os, title, desc, emails, phones, subdomains, security, wplugins, sitemap, robots, social, dynamic, output, no_color, verbose):
     use_color = not no_color
     
     domain = validate_target(target)
@@ -74,7 +75,7 @@ def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech
     active_modules = []
     passive_modules = []
     
-    specific_flags = [whois, dns, mx, txt, subdomains, headers, tech, ssl, geo, os, title, desc, emails, phones, security, wplugins, sitemap, robots]
+    specific_flags = [whois, dns, mx, txt, subdomains, headers, tech, ssl, geo, os, title, desc, emails, phones, security, wplugins, sitemap, robots, social]
     is_custom = any(specific_flags) and not hybrid_mode and not active and not passive
     
     if hybrid_mode:
@@ -109,6 +110,7 @@ def cli(target, hybrid_mode, active, passive, whois, dns, mx, txt, headers, tech
     if wplugins: active_modules.append('wplugins')
     if sitemap: active_modules.append('sitemap')
     if robots: active_modules.append('robots')
+    if social: active_modules.append('social')
     
     active_modules = list(set(active_modules))
     passive_modules = list(set(passive_modules))

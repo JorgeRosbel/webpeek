@@ -71,7 +71,7 @@ def format_output(target, data, use_color=True, is_custom=False):
     }
 
     passive_keys = ['WHOIS', 'Registrar', 'Expiration', 'Creation', 'DNS', 'MX', 'TXT', 'SPF', 'DKIM', 'DMARC', 'Subdomains']
-    active_keys = ['IP', 'OS', 'Geo', 'Country', 'City', 'ISP', 'Headers', 'Security Headers', 'Technologies', 'WordPress Plugins', 'SSL', 'Title', 'Description', 'Sitemap', 'Robots']
+    active_keys = ['IP', 'OS', 'Geo', 'Country', 'City', 'ISP', 'Headers', 'Security Headers', 'Technologies', 'WordPress Plugins', 'SSL', 'Title', 'Description', 'Sitemap', 'Robots', 'Social']
 
     for key, value in data.items():
         if value is None:
@@ -135,6 +135,13 @@ def format_output(target, data, use_color=True, is_custom=False):
             elif key == 'Exposed Files':
                 for v in value[:15]:
                     output.append(f"      {Colors.value(str(v))}")
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    if isinstance(v, list):
+                        urls = ', '.join(v[:2])
+                        output.append(f"      {Colors.label('• ' + k + ':')} {Colors.value(urls)}")
+                    else:
+                        output.append(f"      {Colors.label('• ' + k + ':')} {Colors.value(str(v))}")
             elif isinstance(value, list):
                 for v in value[:8]:
                     output.append(f"      {Colors.value('└─ ' + str(v))}")
@@ -166,7 +173,15 @@ def format_plain(target, data):
     lines.append("[PASSIVE MODE]")
     for key, value in data.items():
         if value and any(k in key for k in passive_keys):
-            if isinstance(value, list):
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    if isinstance(v, list):
+                        lines.append(f"  {k}:")
+                        for item in v:
+                            lines.append(f"    - {item}")
+                    else:
+                        lines.append(f"  {k}: {v}")
+            elif isinstance(value, list):
                 lines.append(f"  {key}:")
                 for v in value:
                     lines.append(f"    - {v}")
@@ -177,7 +192,26 @@ def format_plain(target, data):
     lines.append("[ACTIVE MODE]")
     for key, value in data.items():
         if value and not any(k in key for k in passive_keys):
-            if isinstance(value, list):
+            if isinstance(value, dict):
+                if key == 'Robots':
+                    if value.get('disallow'):
+                        lines.append(f"  {key}:")
+                        lines.append(f"    [Private (Disallow)]:")
+                        for item in value['disallow']:
+                            lines.append(f"      - {item}")
+                    if value.get('allow'):
+                        lines.append(f"    [Allowed]:")
+                        for item in value['allow']:
+                            lines.append(f"      - {item}")
+                else:
+                    lines.append(f"  {key}:")
+                    for k, v in value.items():
+                        if isinstance(v, list):
+                            urls = ', '.join(v[:2])
+                            lines.append(f"    - {k}: {urls}")
+                        else:
+                            lines.append(f"    - {k}: {v}")
+            elif isinstance(value, list):
                 lines.append(f"  {key}:")
                 for v in value:
                     lines.append(f"    - {v}")
